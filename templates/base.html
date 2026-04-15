@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}RFID Attendance{% endblock %} — AttendEase</title>
+  <meta name="description" content="RFID-based smart attendance management system">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+{% if current_user.is_authenticated %}
+<div class="app-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">📡</div>
+      <div>
+        <div class="logo-text"><span>Attend</span>Ease</div>
+        <div class="logo-sub">RFID Attendance System</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      {% if current_user.role == 'admin' or current_user.role == 'teacher' %}
+      <div class="nav-section">Main</div>
+      <a href="{{ url_for('admin_dashboard') }}" class="nav-item">
+        <span class="nav-icon">🏠</span> Dashboard
+      </a>
+
+      <div class="nav-section">Management</div>
+      <a href="{{ url_for('admin_students') }}" class="nav-item">
+        <span class="nav-icon">🎓</span> Students
+      </a>
+      <a href="{{ url_for('admin_attendance') }}" class="nav-item">
+        <span class="nav-icon">📋</span> Attendance
+      </a>
+
+      <div class="nav-section">Insights</div>
+      <a href="{{ url_for('admin_analytics') }}" class="nav-item">
+        <span class="nav-icon">📊</span> Analytics
+      </a>
+      <a href="{{ url_for('admin_reports') }}" class="nav-item">
+        <span class="nav-icon">📄</span> Reports
+      </a>
+
+      <div class="nav-section">System</div>
+      <a href="{{ url_for('admin_settings') }}" class="nav-item">
+        <span class="nav-icon">⚙️</span> Settings
+      </a>
+
+      {% else %}
+      <!-- Student nav -->
+      <div class="nav-section">My Portal</div>
+      <a href="{{ url_for('student_dashboard') }}" class="nav-item">
+        <span class="nav-icon">🏠</span> Dashboard
+      </a>
+      <a href="{{ url_for('student_attendance') }}" class="nav-item">
+        <span class="nav-icon">📋</span> My Attendance
+      </a>
+      <a href="{{ url_for('student_analytics') }}" class="nav-item">
+        <span class="nav-icon">📊</span> Analytics
+      </a>
+      <a href="{{ url_for('student_profile') }}" class="nav-item">
+        <span class="nav-icon">👤</span> Profile
+      </a>
+      {% endif %}
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-card">
+        <div class="user-avatar">{{ current_user.username[:2].upper() }}</div>
+        <div>
+          <div class="user-name">{{ current_user.username }}</div>
+          <div class="user-role">
+            <span class="badge {% if current_user.role == 'admin' %}badge-admin{% endif %}" style="padding:.1rem .4rem;font-size:.65rem">
+              {{ current_user.role }}
+            </span>
+          </div>
+        </div>
+      </div>
+      <a href="{{ url_for('logout') }}" class="btn-logout">🚪 Sign Out</a>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="content">
+    <!-- Mobile header -->
+    <div class="d-flex align-c justify-b mb-2" id="mobile-header" style="display:none!important">
+      <button class="btn btn-ghost btn-icon" id="menu-toggle">☰</button>
+    </div>
+
+    {% block content %}{% endblock %}
+  </main>
+
+</div>
+{% endif %}
+
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% if current_user.is_authenticated and (current_user.role == 'admin' or current_user.role == 'teacher') %}
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% endif %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

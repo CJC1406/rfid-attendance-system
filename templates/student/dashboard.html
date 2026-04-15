@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}My Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">My Dashboard</h1>
+  <p class="page-subtitle">Your attendance overview</p>
+</div>
+
+<div class="grid-2">
+  <!-- Profile Card -->
+  <div class="card" style="display:flex;align-items:center;gap:1.5rem">
+    <div id="s-avatar" class="photo-placeholder" style="width:72px;height:72px;font-size:1.4rem;flex-shrink:0">?</div>
+    <div>
+      <div style="font-size:1.3rem;font-weight:800" id="s-name">Loading…</div>
+      <div class="text-muted" id="s-usn">—</div>
+      <div class="text-muted" style="font-size:.8rem" id="s-branch-year">—</div>
+      <div style="font-size:.8rem;margin-top:.35rem">
+        <span style="color:var(--text3)">RFID:&nbsp;</span>
+        <code id="s-uid" style="color:var(--accent2)">—</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- Attendance gauge -->
+  <div class="card text-center">
+    <h2 class="fw-700 mb-2" style="font-size:1rem">Attendance</h2>
+    <div style="position:relative;display:inline-block">
+      <svg width="160" height="160" viewBox="0 0 160 160">
+        <circle class="gauge-track" cx="80" cy="80" r="70" class="gauge-ring"/>
+        <circle id="gauge-fill" cx="80" cy="80" r="70"
+                style="fill:none;stroke-width:12;stroke-linecap:round;
+                       stroke-dasharray:440;stroke-dashoffset:440;
+                       stroke:var(--success);
+                       transform:rotate(-90deg);transform-origin:80px 80px;
+                       transition:stroke-dashoffset 1s ease"/>
+        <text x="80" y="75" text-anchor="middle" fill="var(--text)"
+              style="font-size:1.8rem;font-weight:800" id="gauge-pct">—</text>
+        <text x="80" y="97" text-anchor="middle" fill="var(--text3)"
+              style="font-size:.75rem">Attendance</text>
+      </svg>
+    </div>
+    <div id="att-warning" style="display:none;color:var(--danger);font-size:.85rem;margin-top:.5rem">
+      ⚠️ Below minimum threshold!
+    </div>
+  </div>
+</div>
+
+<!-- Stat cards -->
+<div class="stats-grid mt-2">
+  <div class="stat-card success">
+    <div class="stat-icon">✅</div>
+    <div><div class="stat-value" id="d-present">—</div><div class="stat-label">Days Present</div></div>
+  </div>
+  <div class="stat-card warning">
+    <div class="stat-icon">⏰</div>
+    <div><div class="stat-value" id="d-late">—</div><div class="stat-label">Days Late</div></div>
+  </div>
+  <div class="stat-card danger">
+    <div class="stat-icon">❌</div>
+    <div><div class="stat-value" id="d-absent">—</div><div class="stat-label">Days Absent</div></div>
+  </div>
+  <div class="stat-card accent">
+    <div class="stat-icon">📆</div>
+    <div><div class="stat-value" id="d-needed">—</div><div class="stat-label">Classes Needed</div></div>
+  </div>
+</div>
+
+<!-- Classes needed explanation -->
+<div class="card mt-2" id="needed-card" style="display:none">
+  <div style="color:var(--warning);font-weight:700;margin-bottom:.5rem">📌 Attendance Calculator</div>
+  <p id="needed-msg" class="text-muted" style="font-size:.875rem"></p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const [info, analytics] = await Promise.all([
+    apiFetch('/api/my/info'),
+    apiFetch('/api/my/analytics'),
+  ]);
+
+  // Profile
+  document.getElementById('s-name').textContent       = info.name;
+  document.getElementById('s-usn').textContent        = info.usn;
+  document.getElementById('s-branch-year').textContent = `${info.branch || '—'} · ${info.year || '—'} Year`;
+  document.getElementById('s-uid').textContent        = info.uid;
+
+  const avatarEl = document.getElementById('s-avatar');
+  if (info.photo) {
+    avatarEl.outerHTML = `<img src="/static/images/${info.photo}" class="photo-thumb" style="width:72px;height:72px;border-radius:50%;object-fit:cover">`;
+  } else {
+    avatarEl.textContent = initials(info.name);
+  }
+
+  // Stats
+  document.getElementById('d-present').textContent = analytics.present;
+  document.getElementById('d-late').textContent    = analytics.late;
+  document.getElementById('d-absent').textContent  = analytics.absent;
+  document.getElementById('d-needed').textContent  = analytics.needed === 999 ? '∞' : analytics.needed;
+
+  // Gauge
+  const pct    = analytics.percentage;
+  const offset = 440 - (440 * pct / 100);
+  document.getElementById('gauge-fill').style.strokeDashoffset = offset;
+  document.getElementById('gauge-fill').style.stroke =
+    pct >= 75 ? 'var(--success)' : pct >= 60 ? 'var(--warning)' : 'var(--danger)';
+  document.getElementById('gauge-pct').textContent = pct + '%';
+
+  if (pct < analytics.min_pct) {
+    document.getElementById('att-warning').style.display = 'block';
+    const card = document.getElementById('needed-card');
+    const msg  = document.getElementById('needed-msg');
+    card.style.display = 'block';
+    msg.textContent = analytics.needed < 200
+      ? `You need to attend the next ${analytics.needed} class(es) consecutively to reach ${analytics.min_pct}% attendance.`
+      : `Your attendance (${pct}%) is critically low. Please contact your class coordinator.`;
+  }
+});
+</script>
+{% endblock %}

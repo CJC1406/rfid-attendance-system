@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">My Profile</h1>
+  <p class="page-subtitle">Your student details</p>
+</div>
+
+<div class="grid-2">
+  <!-- Profile Info -->
+  <div class="card">
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <div id="profile-avatar" class="photo-placeholder"
+           style="width:90px;height:90px;font-size:1.8rem;margin:0 auto 1rem">?</div>
+      <div style="font-size:1.2rem;font-weight:800" id="p-name">Loading…</div>
+      <div class="text-muted" id="p-role">Student</div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:.75rem">
+      <div style="padding:.75rem;background:var(--surface2);border-radius:var(--radius-sm)">
+        <div class="text-muted" style="font-size:.75rem">USN</div>
+        <div class="fw-700" id="p-usn">—</div>
+      </div>
+      <div style="padding:.75rem;background:var(--surface2);border-radius:var(--radius-sm)">
+        <div class="text-muted" style="font-size:.75rem">Branch</div>
+        <div class="fw-700" id="p-branch">—</div>
+      </div>
+      <div style="padding:.75rem;background:var(--surface2);border-radius:var(--radius-sm)">
+        <div class="text-muted" style="font-size:.75rem">Year</div>
+        <div class="fw-700" id="p-year">—</div>
+      </div>
+      <div style="padding:.75rem;background:var(--surface2);border-radius:var(--radius-sm)">
+        <div class="text-muted" style="font-size:.75rem">RFID UID</div>
+        <code class="fw-700" id="p-uid" style="color:var(--accent2)">—</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Password -->
+  <div class="card">
+    <h2 class="fw-700 mb-2" style="font-size:1rem">🔑 Change Password</h2>
+    <form id="pw-form">
+      <div class="form-group">
+        <label class="form-label">New Password</label>
+        <input type="password" id="new-pw" class="form-control" placeholder="Enter new password" minlength="6">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm Password</label>
+        <input type="password" id="confirm-pw" class="form-control" placeholder="Repeat password">
+      </div>
+      <button type="submit" class="btn btn-primary">Update Password</button>
+    </form>
+
+    <div style="margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border)">
+      <h3 class="fw-700 mb-2" style="font-size:.9rem;color:var(--text3)">Account</h3>
+      <a href="{{ url_for('logout') }}" class="btn btn-danger w-100">🚪 Sign Out</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const info = await apiFetch('/api/my/info');
+  document.getElementById('p-name').textContent   = info.name;
+  document.getElementById('p-usn').textContent    = info.usn;
+  document.getElementById('p-branch').textContent = info.branch || '—';
+  document.getElementById('p-year').textContent   = info.year   || '—';
+  document.getElementById('p-uid').textContent    = info.uid;
+
+  const avatarEl = document.getElementById('profile-avatar');
+  if (info.photo) {
+    avatarEl.outerHTML = `<img src="/static/images/${info.photo}"
+      style="width:90px;height:90px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);margin:0 auto 1rem;display:block">`;
+  } else {
+    avatarEl.textContent = initials(info.name);
+  }
+});
+
+document.getElementById('pw-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const pw1 = document.getElementById('new-pw').value;
+  const pw2 = document.getElementById('confirm-pw').value;
+  if (pw1 !== pw2) { showToast('Passwords do not match!', 'warning'); return; }
+  if (pw1.length < 6) { showToast('Password must be at least 6 characters.', 'warning'); return; }
+  try {
+    await apiFetch('/api/my/profile', { method: 'PUT', body: JSON.stringify({ password: pw1 }) });
+    showToast('Password updated!', 'success');
+    document.getElementById('pw-form').reset();
+  } catch (e) { showToast(e.message, 'danger'); }
+});
+</script>
+{% endblock %}

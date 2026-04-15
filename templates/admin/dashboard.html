@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle"><span class="live-dot"></span>&nbsp;Live&nbsp;— refreshes every 3 seconds</p>
+  </div>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid" id="stats-grid">
+  <div class="stat-card accent">
+    <div class="stat-icon">🎓</div>
+    <div><div class="stat-value" id="s-total">—</div><div class="stat-label">Total Students</div></div>
+  </div>
+  <div class="stat-card success">
+    <div class="stat-icon">✅</div>
+    <div><div class="stat-value" id="s-present">—</div><div class="stat-label">Present Today</div></div>
+  </div>
+  <div class="stat-card warning">
+    <div class="stat-icon">⏰</div>
+    <div><div class="stat-value" id="s-late">—</div><div class="stat-label">Late Today</div></div>
+  </div>
+  <div class="stat-card danger">
+    <div class="stat-icon">❌</div>
+    <div><div class="stat-value" id="s-absent">—</div><div class="stat-label">Absent Today</div></div>
+  </div>
+</div>
+
+<!-- Main grid -->
+<div class="grid-2">
+  <!-- Live Feed -->
+  <div class="card" style="grid-column: 1 / -1">
+    <div class="card-header">
+      <span class="card-title">📡 Live Scan Feed</span>
+      <span class="badge badge-present" style="font-size:.7rem"><span class="live-dot" style="width:6px;height:6px;margin-right:.3rem"></span>Live</span>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th></th><th>Name</th><th>USN</th><th>Branch</th><th>Time</th><th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="live-tbody">
+          <tr><td colspan="6"><div class="empty-state"><span class="spinner"></span></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Charts row -->
+<div class="grid-2 mt-2">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">📊 Today's Attendance</span>
+      <span id="donut-pct" style="font-size:1.1rem;font-weight:800;color:var(--blue-400)">—%</span>
+    </div>
+    <div style="position:relative;width:160px;margin:0 auto">
+      <canvas id="today-donut" height="160"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">📈 30-Day Trend</span>
+    </div>
+    <canvas id="trend-chart" height="180"></canvas>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let donutChart = null;
+let trendChart = null;
+let statsLoaded = false;
+
+async function updateStats() {
+  const s = await apiFetch('/api/dashboard/stats');
+  document.getElementById('s-total').textContent   = s.total;
+  document.getElementById('s-present').textContent = s.present;
+  document.getElementById('s-late').textContent    = s.late;
+  document.getElementById('s-absent').textContent  = s.absent;
+  document.getElementById('donut-pct').textContent = s.percentage + '%';
+
+  if (donutChart) donutChart.destroy();
+  donutChart = buildDonutChart('today-donut', s.present, s.late, s.absent);
+  statsLoaded = true;
+}
+
+function updateLiveFeed(rows) {
+  const tbody = document.getElementById('live-tbody');
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state"><span class="empty-icon">📡</span><p>No scans today yet</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${photoHtml(r)}</td>
+      <td><strong>${r.name}</strong></td>
+      <td><span class="text-muted">${r.usn}</span></td>
+      <td>${r.branch || '—'}</td>
+      <td>${fmtTime(r.time)}</td>
+      <td>${badgeHtml(r.status)}</td>
+    </tr>`).join('');
+}
+
+async function loadTrend() {
+  const rows = await apiFetch('/api/analytics/trend?days=30');
+  if (trendChart) trendChart.destroy();
+  trendChart = buildTrendChart('trend-chart', rows);
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await updateStats();
+  await loadTrend();
+
+  // Live feed poller (3 seconds)
+  const livePoll = new DataPoller('/api/attendance/live', updateLiveFeed, 3000);
+  livePoll.start();
+
+  // Stats poller (10 seconds)
+  const statsPoll = new DataPoller('/api/dashboard/stats', (s) => {
+    document.getElementById('s-total').textContent   = s.total;
+    document.getElementById('s-present').textContent = s.present;
+    document.getElementById('s-late').textContent    = s.late;
+    document.getElementById('s-absent').textContent  = s.absent;
+    document.getElementById('donut-pct').textContent = s.percentage + '%';
+  }, 10000);
+  statsPoll.start();
+});
+</script>
+{% endblock %}

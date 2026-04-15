@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}My Attendance{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">My Attendance</h1>
+  <p class="page-subtitle">Your complete attendance history and calendar view</p>
+</div>
+
+<!-- Calendar + Summary -->
+<div class="grid-2 mb-2">
+  <div class="card">
+    <h2 class="fw-700 mb-2" style="font-size:1rem">📅 Calendar View</h2>
+    <div style="display:flex;gap:.5rem;margin-bottom:.75rem;font-size:.75rem">
+      <span style="display:flex;align-items:center;gap:.3rem">
+        <span style="width:12px;height:12px;background:rgba(0,212,138,.3);border-radius:2px;display:inline-block"></span>Present
+      </span>
+      <span style="display:flex;align-items:center;gap:.3rem">
+        <span style="width:12px;height:12px;background:rgba(255,165,2,.3);border-radius:2px;display:inline-block"></span>Late
+      </span>
+      <span style="display:flex;align-items:center;gap:.3rem">
+        <span style="width:12px;height:12px;background:rgba(255,71,87,.25);border-radius:2px;display:inline-block"></span>Absent
+      </span>
+    </div>
+    <div class="calendar-grid" id="cal-header"></div>
+    <div class="calendar-grid mt-1" id="calendar-grid"></div>
+  </div>
+
+  <div class="card">
+    <h2 class="fw-700 mb-2" style="font-size:1rem">📊 Monthly Summary</h2>
+    <div id="monthly-summary"></div>
+  </div>
+</div>
+
+<!-- History table -->
+<div class="card" style="padding:0">
+  <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border)">
+    <h2 class="fw-700" style="font-size:1rem">📑 Attendance History</h2>
+  </div>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr><th>Date</th><th>Time</th><th>Status</th></tr>
+      </thead>
+      <tbody id="my-att-tbody">
+        <tr><td colspan="3"><div class="empty-state"><span class="spinner"></span></div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+  const rows = await apiFetch('/api/my/attendance');
+
+  // Build attendance map by date
+  const map = {};
+  rows.forEach(r => { map[r.date] = r; });
+
+  // Calendar: show last 4 weeks
+  const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const calHeader = document.getElementById('cal-header');
+  calHeader.innerHTML = dayNames.map(d => `<div style="text-align:center;font-size:.65rem;color:var(--text3);font-weight:600">${d}</div>`).join('');
+
+  const grid = document.getElementById('calendar-grid');
+  const today = new Date();
+  const startDay = new Date(today);
+  startDay.setDate(today.getDate() - 27); // 4 weeks back
+  // Pad to Sunday
+  const firstDow = startDay.getDay();
+  startDay.setDate(startDay.getDate() - firstDow);
+
+  let html = '';
+  for (let i = 0; i < 35; i++) {
+    const d = new Date(startDay);
+    d.setDate(startDay.getDate() + i);
+    const iso = d.toISOString().split('T')[0];
+    const entry = map[iso];
+    let cls = '';
+    let title = iso;
+    if (entry) {
+      cls = entry.status;
+      title = `${iso} — ${entry.status} at ${entry.time}`;
+    } else if (d > today) {
+      cls = '';
+    }
+    const isToday = iso === today.toISOString().split('T')[0] ? ' today' : '';
+    html += `<div class="cal-day ${cls}${isToday}" title="${title}">${d.getDate()}</div>`;
+  }
+  grid.innerHTML = html;
+
+  // Monthly summary
+  const months = {};
+  rows.forEach(r => {
+    const m = r.date.slice(0, 7);
+    if (!months[m]) months[m] = { present: 0, late: 0, absent: 0 };
+    months[m][r.status] = (months[m][r.status] || 0) + 1;
+  });
+  const el = document.getElementById('monthly-summary');
+  const sortedMonths = Object.entries(months).sort().reverse().slice(0, 5);
+  if (!sortedMonths.length) {
+    el.innerHTML = '<div class="empty-state"><p>No data yet</p></div>';
+  } else {
+    el.innerHTML = sortedMonths.map(([m, c]) => {
+      const total = c.present + c.late + c.absent;
+      const pct   = total ? Math.round((c.present + c.late) / total * 100) : 0;
+      return `
+        <div style="margin-bottom:1rem">
+          <div class="d-flex align-c justify-b mb-1">
+            <span class="fw-700" style="font-size:.875rem">${m}</span>
+            <span style="font-size:.8rem;color:${pct>=75?'var(--success)':pct>=60?'var(--warning)':'var(--danger)'}">${pct}%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill ${pct>=75?'progress-success':pct>=60?'progress-warning':'progress-danger'}" style="width:${pct}%"></div>
+          </div>
+          <div class="text-muted mt-1" style="font-size:.75rem">✅${c.present || 0} ⏰${c.late || 0} ❌${c.absent || 0}</div>
+        </div>`;
+    }).join('');
+  }
+
+  // Attendance history table
+  const tbody = document.getElementById('my-att-tbody');
+  if (!rows.length) {
+    tbody.innerHTML = `<tr><td colspan="3"><div class="empty-state"><p>No attendance records yet</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td>${fmtDate(r.date)}</td>
+      <td>${fmtTime(r.time)}</td>
+      <td>${badgeHtml(r.status)}</td>
+    </tr>`).join('');
+});
+</script>
+{% endblock %}

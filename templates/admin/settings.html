@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Settings</h1>
+  <p class="page-subtitle">Configure system behaviour and rules</p>
+</div>
+
+<div class="grid-2">
+  <div class="card">
+    <h2 class="fw-700 mb-2" style="font-size:1rem">⏰ Attendance Rules</h2>
+    <form id="settings-form">
+      <div class="form-group">
+        <label class="form-label">Late Threshold Time</label>
+        <input type="time" id="s-late" class="form-control" value="09:00">
+        <p class="text-muted mt-1" style="font-size:.75rem">Scans after this time are marked Late</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cutoff Time (Absent after)</label>
+        <input type="time" id="s-cutoff" class="form-control" value="09:30">
+        <p class="text-muted mt-1" style="font-size:.75rem">Scans after this time are not accepted</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Minimum Attendance % Required</label>
+        <input type="number" id="s-min-att" class="form-control" min="0" max="100" value="75">
+        <p class="text-muted mt-1" style="font-size:.75rem">Students below this % get a low-attendance alert</p>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ESP32 API Key</label>
+        <input type="text" id="s-api-key" class="form-control" placeholder="Secret key for ESP32">
+        <p class="text-muted mt-1" style="font-size:.75rem">Must match the key in the Arduino sketch</p>
+      </div>
+      <button type="submit" class="btn btn-primary">💾 Save Settings</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2 class="fw-700 mb-2" style="font-size:1rem">ℹ️ System Info</h2>
+    <div style="display:flex;flex-direction:column;gap:.75rem">
+      <div class="d-flex align-c justify-b" style="padding:.75rem;background:var(--surface2);border-radius:var(--radius-sm)">
+        <span class="text-muted">Backend</span><strong>Flask (Python)</strong>
+      </div>
+      <div class="d-flex align-c justify-b" style="padding:.75rem;background:var(--surface2);border-radius:var(--radius-sm)">
+        <span class="text-muted">Database</span><strong>SQLite</strong>
+      </div>
+      <div class="d-flex align-c justify-b" style="padding:.75rem;background:var(--surface2);border-radius:var(--radius-sm)">
+        <span class="text-muted">Hardware</span><strong>ESP32 + RC522</strong>
+      </div>
+      <div class="d-flex align-c justify-b" style="padding:.75rem;background:var(--surface2);border-radius:var(--radius-sm)">
+        <span class="text-muted">Real-time</span><strong>Polling (3s)</strong>
+      </div>
+      <div class="d-flex align-c justify-b" style="padding:.75rem;background:var(--surface2);border-radius:var(--radius-sm)">
+        <span class="text-muted">ESP32 Endpoint</span>
+        <code style="font-size:.8rem;color:var(--accent2)">POST /api/scan</code>
+      </div>
+    </div>
+
+    <div class="card mt-2" style="background:var(--success-bg);border-color:rgba(0,212,138,.2);margin-top:1rem">
+      <p style="color:var(--success);font-size:.85rem;font-weight:600">ESP32 Example curl test:</p>
+      <code style="font-size:.75rem;color:var(--text2);display:block;margin-top:.5rem;line-height:1.6">
+        curl -X POST http://YOUR_IP:5000/api/scan \<br>
+        &nbsp;&nbsp;-H "Content-Type: application/json" \<br>
+        &nbsp;&nbsp;-H "X-API-Key: rfid-secret-key-2024" \<br>
+        &nbsp;&nbsp;-d '{"uid":"63A91F2C"}'
+      </code>
+    </div>
+  </div>
+</div>
+{% endblock %}

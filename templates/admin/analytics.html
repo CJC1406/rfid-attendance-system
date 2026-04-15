@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Analytics{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Analytics</h1>
+  <p class="page-subtitle">Attendance trends, branch stats, and student performance</p>
+</div>
+
+<!-- Row 1: Trend + Branch -->
+<div class="grid-2 mb-2">
+  <div class="card">
+    <div class="d-flex align-c justify-b mb-2">
+      <h2 class="fw-700" style="font-size:1rem">📈 Attendance Trend</h2>
+      <select id="trend-days" class="form-control" style="width:130px" onchange="reloadTrend()">
+        <option value="7">Last 7 days</option>
+        <option value="30" selected>Last 30 days</option>
+        <option value="60">Last 60 days</option>
+      </select>
+    </div>
+    <canvas id="trend-chart" height="220"></canvas>
+  </div>
+
+  <div class="card">
+    <h2 class="fw-700 mb-2" style="font-size:1rem">🏫 Branch-wise Attendance %</h2>
+    <canvas id="branch-chart" height="220"></canvas>
+  </div>
+</div>
+
+<!-- Row 2: Top students + Low attendance -->
+<div class="grid-2">
+  <div class="card">
+    <h2 class="fw-700 mb-2" style="font-size:1rem">🏆 Top Students (Days Present)</h2>
+    <canvas id="top-chart" height="260"></canvas>
+  </div>
+
+  <div class="card">
+    <h2 class="fw-700 mb-2" style="font-size:1rem">⚠️ Low Attendance Alert</h2>
+    <div id="low-list">
+      <div class="empty-state"><span class="spinner"></span></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let trendChart = null, branchChart = null, topChart = null;
+
+async function reloadTrend() {
+  const days = document.getElementById('trend-days').value;
+  const rows = await apiFetch(`/api/analytics/trend?days=${days}`);
+  if (trendChart) trendChart.destroy();
+  trendChart = buildTrendChart('trend-chart', rows);
+}
+
+async function loadAnalytics() {
+  const [trendRows, branchRows, topRows, lowRows] = await Promise.all([
+    apiFetch('/api/analytics/trend?days=30'),
+    apiFetch('/api/analytics/branch'),
+    apiFetch('/api/analytics/top-students'),
+    apiFetch('/api/analytics/low-attendance'),
+  ]);
+
+  trendChart  = buildTrendChart('trend-chart', trendRows);
+  branchChart = buildBranchChart('branch-chart', branchRows);
+  topChart    = buildTopChart('top-chart', topRows);
+
+  const el = document.getElementById('low-list');
+  if (!lowRows.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:2rem">
+      <span class="empty-icon">✅</span><p>All students have adequate attendance!</p></div>`;
+    return;
+  }
+  el.innerHTML = lowRows.map(s => `
+    <div class="d-flex align-c justify-b" style="padding:.75rem 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div class="fw-700" style="font-size:.875rem">${s.name}</div>
+        <div class="text-muted">${s.usn} · ${s.branch}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="color:var(--danger);font-weight:700">${s.percentage}%</div>
+        <div class="text-muted" style="font-size:.75rem">${s.present_days}/${s.total_days} days</div>
+      </div>
+    </div>`).join('');
+}
+
+document.addEventListener('DOMContentLoaded', loadAnalytics);
+</script>
+{% endblock %}
