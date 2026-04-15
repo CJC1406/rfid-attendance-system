@@ -4,13 +4,13 @@ A full-stack RFID-based attendance management platform built with ESP32, Flask, 
 
 ## Features
 
-- 📡 **RFID Card Scanning** via ESP32 + RC522 over Wi-Fi
-- 🛡️ **Admin Portal** — dashboard, student management, attendance, analytics, reports, settings
-- 🎓 **Student Portal** — personal attendance, analytics, calendar heatmap, profile
-- 📊 **Chart.js Analytics** — trends, branch stats, top/low attendance
-- 📤 **Export** — CSV and PDF reports
-- ⚡ **Real-time** — live scan feed polling every 3 seconds
-- 🎨 **Professional Blue UI** — dark navy glassmorphism theme
+-  **RFID Card Scanning** via ESP32 + RC522 over Wi-Fi
+-  **Admin Portal** — dashboard, student management, attendance, analytics, reports, settings
+-  **Student Portal** — personal attendance, analytics, calendar heatmap, profile
+-  **Chart.js Analytics** — trends, branch stats, top/low attendance
+-  **Export** — CSV and PDF reports
+-  **Real-time** — live scan feed polling every 3 seconds
+-  **Professional Blue UI** — dark navy glassmorphism theme
 
 ## Tech Stack
 
