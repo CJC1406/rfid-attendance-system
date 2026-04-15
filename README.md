@@ -112,5 +112,5 @@ const char* API_KEY       = "rfid-secret-key-2024";  // Match Settings page
 | `GET`  | `/api/export/pdf` | Export PDF |
 
 ## Author
-
+DEEKSHA G - PES1UG24AM078
 Chiranth J — PES1UG24AM072
