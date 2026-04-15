@@ -3,8 +3,10 @@
 - Documentation and system structure
 - # AttendEase — RFID Smart Attendance Management System
 - Added explanation for RFID data flow
+- ## Contribution
+- Deeksha Gururaja: Improved documentation and project structure
 
-A full-stack RFID-based attendance management platform built with ESP32, Flask, and SQLite.
+A full-stack RFID-based smart  attendance management platform built with ESP32, Flask, and SQLite.
 
 ## Features
 
@@ -14,7 +16,7 @@ A full-stack RFID-based attendance management platform built with ESP32, Flask, 
 -  **Chart.js Analytics** — trends, branch stats, top/low attendance
 -  **Export** — CSV and PDF reports
 -  **Real-time** — live scan feed polling every 3 seconds
--  **Professional Blue UI** — dark navy glassmorphism theme
+-  **Professional Blue UI** — dark navy glassmorphism theme for UI
 
 ## Tech Stack
 
