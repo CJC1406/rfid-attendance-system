@@ -1,6 +1,8 @@
 
 - Deeksha Gururaja
-- documentation and system structure# AttendEase — RFID Attendance System
+- Documentation and system structure
+- # AttendEase — RFID Smart Attendance Management System
+- Added explanation for RFID data flow
 
 A full-stack RFID-based attendance management platform built with ESP32, Flask, and SQLite.
 
