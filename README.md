@@ -1,5 +1,7 @@
 
-- Deeksha Gururaja
+- Deeksha Gururaja  PES1UG24AM078
+- Chris John paul PES1UG24AM073
+- Chiraanth CJ PES1UG24AM072
 - Documentation and system structure
 - # AttendEase — RFID Smart Attendance Management System
 - Added explanation for RFID data flow
